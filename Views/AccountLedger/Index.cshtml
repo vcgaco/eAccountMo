@@ -1,0 +1,127 @@
+﻿@model eAccount.Models.ViewModel.AccountLedgerFilterViewModel
+
+<h2><i class="fa fa-address-book" aria-hidden="true"></i> Account Ledger</h2>
+
+<form method="get" class="row g-2 mb-4">
+
+    <!-- ✅ ACCOUNT (REQUIRED) -->
+    <div class="col-md-4">
+        <label class="form-label">Account</label>
+        @*  <select name="accountId" class="form-select" required>
+            <option value="">-- Select Account --</option>
+            @foreach (var acc in Model.Accounts)
+            {
+                <option value="@acc.Value" @(acc.Value == Model.AccountId?.ToString() ? "selected" : "")>
+                    @acc.Text
+                </option>
+            }
+        </select> *@
+        <select asp-for="AccountId" name="accountId" id="accountSelect" asp-items="Model.Accounts" class="form-select" required>
+            <option value="">-- Accounts --</option>
+        </select>
+
+
+    </div>
+
+    <!-- ✅ FUND -->
+    <div class="col-md-3">
+        <label class="form-label">Fund</label>
+        <select asp-for="FundId" asp-items="Model.Funds" name="fundId" id="fundSelect" class="form-select">
+            <option value="">-- All Funds --</option>
+        </select>
+    </div>
+
+    <!-- ✅ SPECIAL ACCOUNT -->
+    <div class="col-md-3">
+        <label class="form-label">Special Account</label>
+        <select name="specialAccountId" id="specialAccountSelect" class="form-select">
+            <option value="">-- Select Special Account --</option>
+        </select>
+
+    </div>
+
+    <!-- ✅ AS OF DATE -->
+    <div class="col-md-2">
+        <label class="form-label">As of Month</label>
+        <input type="month"
+               name="asOfDate"
+               class="form-control"
+               value="@Model.AsOfDate.ToString("yyyy-MM")" />
+    </div>
+
+    <div class="col-md-12">
+        <button type="submit" class="btn btn-primary mt-2">
+            <i class="fa fa-tasks" aria-hidden="true"></i> Generate Ledger
+        </button>
+    </div>
+</form>
+
+@if (Model.LedgerEntries.Any())
+{
+    <table class="table table-bordered table-striped">
+        <thead class="table-dark">
+            <tr>
+                <th>Account Code</th>
+                <th>Account Name</th>
+                <th>Subsidiary</th>
+                <th>JEV</th>
+                <th>Date</th>
+                <th>Particular</th>
+                <th class="text-end">Debit</th>
+                <th class="text-end">Credit</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var e in Model.LedgerEntries)
+            {
+                <tr>
+                    <td>@e.AccountCode</td>
+                    <td>@e.AccountName</td>
+                    <td>@(e.SubsidiaryName ?? "-")</td>
+                    <td>@e.JevNo</td>
+                    <td>@e.EncodedDate.ToString("MM/dd/yyyy")</td>
+                    <td>@e.Particular</td>
+                    <td class="text-end">@e.Debit.ToString("N2")</td>
+                    <td class="text-end">@e.Credit.ToString("N2")</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+else
+{
+    <div class="alert alert-info text-center">
+        Please select an <b>Account</b> and click <b>Generate Ledger</b>.
+    </div>
+}
+<script>
+    $(document).ready(function () {
+        $('#accountSelect').select2({
+            placeholder: "Search account...",
+            allowClear: true,
+            width: '100%'
+        });
+    });
+
+    $(document).ready(function () {
+
+        $('#fundSelect').change(function () {
+            var fundId = $(this).val();
+            var specialAccountDropdown = $('#specialAccountSelect');
+
+            specialAccountDropdown.empty();
+            specialAccountDropdown.append('<option value="">-- Select Special Account --</option>');
+
+            if (fundId) {
+                $.getJSON('/AccountLedger/GetSpecialAccountsByFund', { fundId: fundId }, function (data) {
+                    $.each(data, function (i, item) {
+                        specialAccountDropdown.append(
+                            $('<option></option>').val(item.id).text(item.text)
+                        );
+                    });
+                });
+            }
+        });
+
+    });
+</script>

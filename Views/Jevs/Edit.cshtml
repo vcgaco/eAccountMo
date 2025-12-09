@@ -1,0 +1,96 @@
+﻿@model Jev
+
+<form asp-action="Edit" method="post">
+
+    @Html.AntiForgeryToken()
+    <input type="hidden" asp-for="Id" />
+
+    <div class="mb-3">
+        <label>Year</label>
+        <select asp-for="AccountingYear" class="form-control">
+            <option value="">-- Select Year --</option>
+            @for (int y = DateTime.Now.Year; y >= 2000; y--)
+            {
+                <option value="@y">@y</option>
+            }
+        </select>
+    </div>
+    <!-- ✅ FUND -->
+    <div class="mb-3">
+        <label>Fund</label>
+        <select asp-for="FundId" id="FundId" class="form-select">
+            <option value="">-- Select Fund --</option>
+
+            @foreach (var f in ViewBag.Funds)
+            {
+                <option value="@f.Value">@f.Text</option>
+            }
+        </select>
+    </div>
+
+    <!-- ✅ SPECIAL ACCOUNT -->
+    <div class="mb-3">
+        <label>Special Account</label>
+        <select asp-for="SpecialAccountId" id="SpecialAccountId" class="form-select">
+            <option value="">-- Select Special Account --</option>
+
+            @foreach (var s in ViewBag.SpecialAccounts)
+            {
+                <option value="@s.Value">@s.Text</option>
+            }
+        </select>
+    </div>
+    <div class="mb-3">
+        <label>JEV No</label>
+        <input asp-for="JevNo" class="form-control" readonly />
+    </div>
+    <div class="mb-3">
+        <label>Amount</label>
+        <input asp-for="JevAmount" class="form-control" />
+    </div>
+    <div class="mb-3">
+        <label>Particular</label>
+        <input asp-for="Particular" class="form-control" />
+    </div>
+
+    <div class="mb-3">
+        <label>Accounting Period</label>
+        <input asp-for="AccountingPeriod" type="month" class="form-control" />
+    </div>
+
+
+
+
+    <button type="submit" class="btn btn-primary">
+        ✅ Update JEV
+    </button>
+</form>
+
+<script>
+    document.getElementById("FundId").addEventListener("change", function () {
+
+        const fundId = this.value;
+        const specialSelect = document.getElementById("SpecialAccountId");
+
+        specialSelect.innerHTML = '<option value="">-- Loading --</option>';
+
+        if (!fundId) {
+            specialSelect.innerHTML = '<option value="">-- Select Special Account --</option>';
+            return;
+        }
+
+        fetch('/TrialBalance/GetSpecialAccountsByFund?fundId=' + fundId)
+            .then(res => res.json())
+            .then(data => {
+
+                specialSelect.innerHTML = '<option value="">-- Select Special Account --</option>';
+
+                data.forEach(sa => {
+                    const opt = document.createElement("option");
+                    opt.value = sa.id;
+                    opt.text = sa.accountName;
+                    specialSelect.appendChild(opt);
+                });
+            });
+    });
+</script>

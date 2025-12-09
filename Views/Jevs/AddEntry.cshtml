@@ -1,0 +1,116 @@
+﻿@model JevEntry
+
+@{
+    ViewData["Title"] = "Add Journal Entry";
+}
+
+<form asp-action="AddEntry" method="post">
+    @Html.AntiForgeryToken()
+    <input type="hidden" asp-for="JevId" />
+
+    <div class="mb-3">
+        <label>Account</label>
+        <select asp-for="AccountId" class="form-control select2" id="AccountId" required>
+            <option value="">-- Search Account --</option>
+            @foreach (var acc in ViewBag.Accounts)
+            {
+                <option value="@acc.Id" data-hassub="@acc.HasSubsidiary">
+                    @acc.AccountCode - @acc.AccountName
+                </option>
+            }
+        </select>
+    </div>
+
+    <div class="mb-3" id="subsidiaryContainer" style="display:none;">
+        <label>Subsidiary</label>
+        <select asp-for="SubsidiaryId" class="form-control select2" id="SubsidiaryId">
+            <option value="">-- Search Subsidiary --</option>
+        </select>
+        <div id="subsidiaryError" class="text-danger mt-1 d-none">
+            Subsidiary is required for this account.
+        </div>
+    </div>
+
+    <div class="mb-3">
+        <label>Debit</label>
+        <input asp-for="Debit" class="form-control" type="number" step="0.01" />
+    </div>
+
+    <div class="mb-3">
+        <label>Credit</label>
+        <input asp-for="Credit" class="form-control" type="number" step="0.01" />
+    </div>
+
+    <button type="submit" class="btn btn-success" id="saveBtn">Save Entry</button>
+</form>
+
+<!-- Select2 + dynamic JS -->
+<script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
+<script>
+    $(document).ready(function () {
+        const accountSelect = $("#AccountId");
+        const subContainer = $("#subsidiaryContainer");
+        const subSelect = $("#SubsidiaryId");
+        const saveBtn = $("#saveBtn");
+        const debit = $("input[name='Debit']");
+        const credit = $("input[name='Credit']");
+        const subError = $("#subsidiaryError");
+
+        // Initialize Select2
+        accountSelect.select2({ width: '100%', placeholder: 'Search Account...' });
+        subSelect.select2({ width: '100%', placeholder: 'Search Subsidiary...' });
+
+        saveBtn.prop('disabled', true);
+        subContainer.hide();
+
+        function enableIfValid() {
+            const d = parseFloat(debit.val()) || 0;
+            const c = parseFloat(credit.val()) || 0;
+            if (!accountSelect.val()) { saveBtn.prop('disabled', true); return; }
+            if (subContainer.is(':visible') && !subSelect.val()) { saveBtn.prop('disabled', true); return; }
+            if ((d <= 0 && c <= 0) || (d > 0 && c > 0)) { saveBtn.prop('disabled', true); return; }
+            saveBtn.prop('disabled', false);
+        }
+
+        accountSelect.on('change', function () {
+            const accountId = $(this).val();
+            subSelect.empty().append('<option value="">-- Search Subsidiary --</option>').trigger('change');
+            subContainer.hide();
+            subError.addClass('d-none');
+            saveBtn.prop('disabled', true);
+
+            if (!accountId) return;
+
+            $.getJSON('@Url.Action("GetSubsidiariesByAccount", "Jevs")', { accountId: accountId }, function (data) {
+                if (data.requiresSubsidiary) {
+                    subContainer.show();
+                    subError.removeClass('d-none');
+                    subSelect.empty().append('<option value="">-- Search Subsidiary --</option>');
+                    data.subsidiaries.forEach(s => {
+                        subSelect.append(new Option((s.subsidiaryCode ? s.subsidiaryCode + ' - ' : '') + s.subsidiaryName, s.id));
+                    });
+                    subSelect.trigger('change');
+                    saveBtn.prop('disabled', true);
+                } else {
+                    subContainer.hide();
+                    subError.addClass('d-none');
+                    enableIfValid();
+                }
+            });
+        });
+
+        subSelect.on('change', function () {
+            if ($(this).val()) subError.addClass('d-none');
+            else subError.removeClass('d-none');
+            enableIfValid();
+        });
+
+        debit.on('input', enableIfValid);
+        credit.on('input', enableIfValid);
+
+        enableIfValid();
+    });
+</script>

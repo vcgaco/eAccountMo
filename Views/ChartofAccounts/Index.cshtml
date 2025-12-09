@@ -1,0 +1,67 @@
+﻿@model IEnumerable<eAccount.Models.ChartofAccount>
+
+@{
+    ViewData["Title"] = "Chart of Accounts";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h2>@ViewData["Title"]</h2>
+    <a asp-action="Create" class="btn btn-primary">Create New Account</a>
+</div>
+
+<table class="table table-bordered">
+    <thead>
+        <tr>
+            <th>@Html.DisplayNameFor(m => m.First().AccountCode)</th>
+            <th>@Html.DisplayNameFor(m => m.First().AccountName)</th>
+            <th>@Html.DisplayNameFor(m => m.First().HasSubsidiary)</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        @if (Model != null && Model.Any())
+        {
+            foreach (var item in Model)
+            {
+                <tr>
+                    <td>@item.AccountCode</td>
+                    <td>@item.AccountName</td>
+                    <td>@(item.HasSubsidiary ? "Yes" : "No")</td>
+                    <td>
+                        <a asp-action="Edit" asp-route-id="@item.Id">Edit</a> |
+                        <a asp-action="Details" asp-route-id="@item.Id">Details</a> |
+                        <a asp-action="Delete" asp-route-id="@item.Id">Delete</a>
+
+                        @if (item.HasSubsidiary)
+                        {
+                            <a asp-controller="SubsidiaryAccounts"
+                               asp-action="ByAccount"
+                               asp-route-accountId="@item.Id"
+                               class="btn btn-sm btn-outline-secondary ms-2"
+                               title="View Subsidiaries">
+                                📂
+                            </a>
+
+                            <a asp-controller="SubsidiaryAccounts"
+                               asp-action="Create"
+                               asp-route-accountId="@item.Id"
+                               class="btn btn-sm btn-outline-primary ms-1"
+                               title="Add Subsidiary">
+                                ➕
+                            </a>
+
+
+
+                        }
+                    </td>
+                </tr>
+            }
+        }
+        else
+        {
+            <tr>
+                <td colspan="4" class="text-center text-muted">No chart of accounts found.</td>
+            </tr>
+        }
+    </tbody>
+</table>

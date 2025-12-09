@@ -1,0 +1,116 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - eAccount</title>
+    <script type="importmap"></script>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/eAccount.styles.css" asp-append-version="true" />
+
+    <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+
+
+</head>
+<body>
+    <header>
+        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
+            <div class="container-fluid">
+                <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">eAccount System</a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
+                        aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
+                    <ul class="navbar-nav flex-grow-1">
+                    </ul>
+                    <partial name="_LoginPartial" />
+                </div>
+            </div>
+        </nav>
+    </header>
+    <div class="sidebar">
+        <h4 class="text-center">Admin Panel</h4>
+
+        <a asp-controller="Home" asp-action="Index">Dashboard</a>
+
+        <!-- DROPDOWN MENU -->
+        <a class="dropdown-toggle"
+           data-bs-toggle="collapse"
+           href="#accountingMenu"
+           role="button"
+           aria-expanded="false"
+           aria-controls="accountingMenu">
+            Journal Entries
+        </a>
+
+        <div class="collapse ps-4" id="accountingMenu" data-bs-parent=".sidebar">
+            <a asp-controller="Jevs" asp-action="Index" asp-route-transId="1"><i class="fa fa-calculator" aria-hidden="true"></i> Collection</a>
+            <a asp-controller="Jevs" asp-action="Index" asp-route-transId="2"><i class="fa fa-university" aria-hidden="true"></i> Check Disbursement</a>
+            <a asp-controller="Reports" asp-action="TrialBalance"><i class="fa fa-money" aria-hidden="true"></i> Cash Disbursement</a>
+            <a asp-controller="Reports" asp-action="TrialBalance"><i class="fa fa-credit-card" aria-hidden="true"></i> Auto Debit</a>
+            <a asp-controller="Reports" asp-action="TrialBalance"><i class="fa fa-adjust" aria-hidden="true"></i> Others</a>
+        </div>
+
+        <a class="dropdown-toggle"
+           data-bs-toggle="collapse"
+           href="#reports"
+           role="button"
+           aria-expanded="false"
+           aria-controls="reports">
+            Reports
+        </a>
+
+        <div class="collapse ps-4" id="reports" data-bs-parent=".sidebar">
+            <a asp-controller="TrialBalance" asp-action="TrialBalance"><i class="fa fa-balance-scale" aria-hidden="true"></i> Trial Balance</a>
+            <a asp-controller="FinancialPosition" asp-action="Index"><i class="fa fa-line-chart" aria-hidden="true"></i> Financial Position</a>
+            <a asp-controller="FinancialPerformance" asp-action="Index"><i class="fa fa-hourglass-half" aria-hidden="true"></i> Financial Performance</a>
+            <a asp-controller="CashFlow" asp-action="Index"><i class="fa fa-suitcase" aria-hidden="true"></i> Cash Flow</a>
+            <a asp-controller="AccountLedger" asp-action="Index"><i class="fa fa-book" aria-hidden="true"></i> General Ledger</a>
+            <a asp-controller="SubsidiaryMonitoring" asp-action="Index" class="nav-link"><i class="fa fa-bar-chart" aria-hidden="true"></i> Subsidiary Monitoring</a>
+        </div>
+        <a class="dropdown-toggle"
+           data-bs-toggle="collapse"
+           href="#settings"
+           role="button"
+           aria-expanded="false"
+           aria-controls="settings">
+            Settings
+        </a>
+
+        <div class="collapse ps-4" id="settings" data-bs-parent=".sidebar">
+            <a asp-controller="Ledger" asp-action="Index"><i class="fa fa-users" aria-hidden="true"></i> Users</a>
+            <a asp-controller="ChartofAccounts" asp-action="Index"><i class="fa fa-address-book" aria-hidden="true"></i> Chart of Accounts</a>
+            <a asp-controller="FinancialReportClassifications" asp-action="Index"><i class="fa fa-cog" aria-hidden="true"></i> Setup Financial Position</a>
+
+        </div>
+
+
+
+        <a asp-controller="Account" asp-action="Logout">Logout</a>
+    </div>
+    <div class="container">
+        <main role="main" class="pb-3">
+            @RenderBody()
+        </main>
+    </div>
+
+    <footer class="border-top footer text-muted">
+        <div class="container">
+            &copy; 2025 - eAccount - <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
+        </div>
+    </footer>
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
+    @await RenderSectionAsync("Scripts", required: false)
+
+</body>
+</html>

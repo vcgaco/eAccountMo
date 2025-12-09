@@ -1,0 +1,95 @@
+﻿@model eAccount.Models.ViewModel.CreateJevViewModel
+
+@{
+    ViewData["Title"] = "Create";
+}
+<h4>Create Jev</h4>
+<hr />
+<div class="row">
+    <div class="col-md-4">
+        <form asp-action="Create" method="post">
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+            <div class="form-group">
+                <label asp-for="AccountingYear" class="control-label"></label>
+                <select asp-for="AccountingYear" asp-items="Model.AccountingYearList" class="form-control">
+                    <option value="">-- Select Year --</option>
+                </select>
+                <span asp-validation-for="AccountingYear" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="FundId">Fund</label>
+                <select asp-for="FundId" asp-items="Model.Funds" class="form-control" id="FundSelect">
+                    <option value="">-- Select Fund --</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label asp-for="SpecialAccountId">Special Account</label>
+                <select asp-for="SpecialAccountId" class="form-control" id="SpecialAccountSelect">
+                    <option value="">-- Select Special Account --</option>
+                    @foreach (var sa in Model.SpecialAccounts)
+                    {
+                        <option value="@sa.Value" selected="@sa.Selected">@sa.Text</option>
+                    }
+                </select>
+            </div>
+            <div class="form-group">
+                <label asp-for="JevNo" class="control-label"></label>
+                <input asp-for="JevNo" class="form-control" />
+                <span asp-validation-for="JevNo" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="JevAmount" class="control-label"></label>
+                <input asp-for="JevAmount" class="form-control" />
+                <span asp-validation-for="JevAmount" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="Particular" class="control-label"></label>
+                <input asp-for="Particular" class="form-control" />
+                <span asp-validation-for="Particular" class="text-danger"></span>
+            </div>
+
+            <div class="form-group">
+                <label asp-for="AccountingPeriod" class="control-label"></label>
+                <input asp-for="AccountingPeriod" class="form-control" />
+                <span asp-validation-for="AccountingPeriod" class="text-danger"></span>
+            </div>
+
+            <input type="hidden" asp-for="TransId" />
+
+
+            <div class="form-group">
+                <input type="submit" value="Create" class="btn btn-primary" />
+            </div>
+        </form>
+    </div>
+</div>
+
+<div>
+    <a asp-action="Index">Back to List</a>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+
+    <script>
+        $(document).ready(function () {
+            $("#FundSelect").change(function () {
+                var fundId = $(this).val();
+                var $specialSelect = $("#SpecialAccountSelect");
+
+                $specialSelect.empty().append('<option value="">-- Select Special Account --</option>');
+
+                if (fundId) {
+                    var url = '@Url.Action("GetSpecialAccountsByFund", "Jevs")?fundId=' + fundId;
+
+                    $.getJSON(url, function (data) {
+                        $.each(data, function (index, sa) {
+                            var selected = index === 0 ? 'selected' : '';
+                            $specialSelect.append('<option value="' + sa.id + '" ' + selected + '>' + sa.name + '</option>');
+                        });
+                    });
+                }
+            });
+        });
+    </script>
+}

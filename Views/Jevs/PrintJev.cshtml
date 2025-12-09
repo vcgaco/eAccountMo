@@ -1,0 +1,87 @@
+﻿@model Jev
+@{
+    Layout = null; // ✅ No master layout for clean print
+}
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Print JEV</title>
+    <style>
+        body {
+            font-family: Arial;
+            font-size: 12px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            border: 1px solid black;
+            padding: 6px;
+        }
+
+        .text-right {
+            text-align: right;
+        }
+
+        .header {
+            text-align: center;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body onload="window.print()">
+
+    <div class="header">JOURNAL ENTRY VOUCHER</div>
+    <br />
+
+    <table>
+        <tr>
+            <td><b>JEV No:</b> @Model.JevNo</td>
+            <td><b>Date:</b> @Model.AccountingPeriod.ToString("MM/dd/yyyy")</td>
+        </tr>
+        <tr>
+            <td><b>Fund:</b> @Model.FundId</td>
+            <td><b>Year:</b> @Model.AccountingYear</td>
+        </tr>
+    </table>
+
+    <br />
+
+    <table>
+        <thead>
+            <tr>
+                <th>Account</th>
+                <th>Subsidiary</th>
+                <th class="text-right">Debit</th>
+                <th class="text-right">Credit</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var e in Model.Entries)
+            {
+                <tr>
+                    <td>@e.Account.AccountName</td>
+                    <td>@(e.Subsidiary?.SubsidiaryName ?? "-")</td>
+                    <td class="text-right">@e.Debit.ToString("N2")</td>
+                    <td class="text-right">@e.Credit.ToString("N2")</td>
+                </tr>
+            }
+        </tbody>
+        <tfoot>
+            <tr>
+                <th colspan="2">TOTAL</th>
+                <th class="text-right">@Model.Entries.Sum(x => x.Debit).ToString("N2")</th>
+                <th class="text-right">@Model.Entries.Sum(x => x.Credit).ToString("N2")</th>
+            </tr>
+        </tfoot>
+    </table>
+
+    <br />
+    <b>Particular:</b> @Model.Particular
+
+</body>
+</html>

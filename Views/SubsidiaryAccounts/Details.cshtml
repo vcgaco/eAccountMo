@@ -1,0 +1,36 @@
+﻿@model eAccount.Models.SubsidiaryAccount
+
+@{
+    ViewData["Title"] = "Details";
+}
+
+<h1>Details</h1>
+
+<div>
+    <h4>SubsidiaryAccount</h4>
+    <hr />
+    <dl class="row">
+        <dt class = "col-sm-2">
+            @Html.DisplayNameFor(model => model.SubsidiaryName)
+        </dt>
+        <dd class = "col-sm-10">
+            @Html.DisplayFor(model => model.SubsidiaryName)
+        </dd>
+        <dt class = "col-sm-2">
+            @Html.DisplayNameFor(model => model.SubsidiaryCode)
+        </dt>
+        <dd class = "col-sm-10">
+            @Html.DisplayFor(model => model.SubsidiaryCode)
+        </dd>
+        <dt class = "col-sm-2">
+            @Html.DisplayNameFor(model => model.Account)
+        </dt>
+        <dd class = "col-sm-10">
+            @Html.DisplayFor(model => model.Account.Id)
+        </dd>
+    </dl>
+</div>
+<div>
+    <a asp-action="Edit" asp-route-id="@Model?.Id">Edit</a> |
+    <a asp-action="Index">Back to List</a>
+</div>

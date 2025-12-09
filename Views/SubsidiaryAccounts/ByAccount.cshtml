@@ -1,0 +1,59 @@
+﻿@model eAccount.Models.ChartofAccount
+
+@{
+    ViewData["Title"] = "Subsidiaries";
+}
+
+<h4>
+    Subsidiaries for:
+    <b>@Model.AccountCode - @Model.AccountName</b>
+</h4>
+
+<p>
+    <a asp-action="Create"
+       asp-route-accountId="@Model.Id"
+       class="btn btn-primary">
+        ➕ Add Subsidiary
+    </a>
+
+    <a asp-controller="ChartofAccounts"
+       asp-action="Index"
+       class="btn btn-secondary">
+        ⬅ Back to Chart of Accounts
+    </a>
+</p>
+
+<table class="table table-bordered">
+    <thead>
+        <tr>
+            <th>Code</th>
+            <th>Name</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+
+    <tbody>
+        @if (Model.Subsidiaries?.Any() == true)
+        {
+            foreach (var sub in Model.Subsidiaries)
+            {
+                <tr>
+                    <td>@sub.SubsidiaryCode</td>
+                    <td>@sub.SubsidiaryName</td>
+                    <td>
+                        <a asp-action="Edit" asp-route-id="@sub.Id">Edit</a> |
+                        <a asp-action="Delete" asp-route-id="@sub.Id">Delete</a>
+                    </td>
+                </tr>
+            }
+        }
+        else
+        {
+            <tr>
+                <td colspan="3" class="text-center text-muted">
+                    No subsidiaries found.
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>

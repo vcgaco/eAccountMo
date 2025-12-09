@@ -1,0 +1,153 @@
+﻿@model List<eAccount.Models.ViewModel.FinancialPositionViewModel>
+
+@{
+    ViewData["Title"] = "Statement of Financial Position";
+}
+
+<h2>Statement of Financial Position</h2>
+
+<form method="get" class="row g-2 mb-3">
+
+    <div class="col-md-3">
+        <label>Fund</label>
+        <select id="fundId" name="fundId" class="form-select">
+            <option value="">-- Select Fund --</option>
+            @foreach (var f in ViewBag.Funds as List<SelectListItem>)
+            {
+                <option value="@f.Value">@f.Text</option>
+            }
+        </select>
+    </div>
+
+    <div class="col-md-3">
+        <label>Special Account</label>
+        <select id="specialAccountId" name="specialAccountId" class="form-select">
+            <option value="">-- All --</option>
+        </select>
+    </div>
+
+
+    <div class="col-md-3">
+        <label>As of Month</label>
+        <input type="month" name="period" class="form-control" value="@ViewBag.Period" />
+    </div>
+
+    <div class="col-md-2 align-self-end">
+        <button type="submit" class="btn btn-primary">Filter</button>
+    </div>
+
+</form>
+
+@if (Model != null && Model.Any())
+{
+    <table class="table table-bordered table-striped">
+        <thead class="table-light">
+            <tr>
+                <th>Account Code</th>
+                <th>Account Name</th>
+                <th class="text-end">Amount</th>
+            </tr>
+        </thead>
+        <tbody>
+            @* Group by Section -> SubSection -> Category -> Account *@
+            @foreach (var sectionName in Model.Select(m => m.Section).Distinct())
+            {
+                <tr class="table-secondary">
+                    <th colspan="3">@sectionName</th>
+                </tr>
+
+                var subSections = Model.Where(m => m.Section == sectionName)
+                .Select(m => m.SubSection)
+                .Distinct();
+
+                foreach (var sub in subSections)
+                {
+                    if (!string.IsNullOrEmpty(sub))
+                    {
+                        <tr class="table-info">
+                            <th colspan="3">@sub</th>
+                        </tr>
+                    }
+
+                    var accounts = Model.Where(m => m.Section == sectionName && m.SubSection == sub);
+
+                    foreach (var row in accounts)
+                    {
+                        if (row.Amount != 0) // Skip zero balances
+                        {
+                            <tr>
+                                <td>@row.AccountCode</td>
+                                <td>@row.AccountName</td>
+                                <td class="text-end">@row.Amount.ToString("N2")</td>
+                            </tr>
+                        }
+                    }
+
+                    var subTotal = accounts.Sum(x => x.Amount);
+                    if (subTotal != 0)
+                    {
+                        <tr class="table-light">
+                            <th colspan="2" class="text-end">Total @sub</th>
+                            <th class="text-end">@subTotal.ToString("N2")</th>
+                        </tr>
+                    }
+                }
+
+                var sectionTotal = Model.Where(m => m.Section == sectionName).Sum(x => x.Amount);
+                if (sectionTotal != 0)
+                {
+                    <tr class="table-light">
+                        <th colspan="2" class="text-end">Total @sectionName</th>
+                        <th class="text-end">@sectionTotal.ToString("N2")</th>
+                    </tr>
+                }
+            }
+        </tbody>
+    </table>
+}
+else
+{
+    <div class="alert alert-info">
+        No accounts found. Please select Fund, optional Special Account, and Period.
+    </div>
+}
+@section Scripts {
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+
+            const fundSelect = document.getElementById("fundId");
+            const specialSelect = document.getElementById("specialAccountId");
+
+            fundSelect.addEventListener("change", function () {
+
+                const fundId = this.value;
+                specialSelect.innerHTML = '<option value="">-- Loading... --</option>';
+
+                if (!fundId) {
+                    specialSelect.innerHTML = '<option value="">-- All --</option>';
+                    return;
+                }
+
+                fetch('@Url.Action("GetSpecialAccountsByFund", "TrialBalance")?fundId=' + fundId)
+                    .then(res => res.json())
+                    .then(data => {
+
+                        specialSelect.innerHTML = '<option value="">-- All --</option>';
+
+                        data.forEach(sa => {
+                            const opt = document.createElement("option");
+                            opt.value = sa.id;
+                            opt.text = sa.accountName;
+                            specialSelect.appendChild(opt);
+                        });
+
+                    })
+                    .catch(err => {
+                        console.error("Failed to load special accounts:", err);
+                        specialSelect.innerHTML = '<option value="">-- All --</option>';
+                    });
+            });
+
+        });
+    </script>
+}

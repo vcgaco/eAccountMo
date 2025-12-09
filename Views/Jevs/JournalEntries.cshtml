@@ -1,0 +1,108 @@
+﻿@model Jev
+@{
+    ViewData["Title"] = "Journal Entry";
+}
+<h3>Journal Entries - @Model.JevNo</h3>
+
+<div class="mb-3">
+    <strong>Accounting Period:</strong> @Model.AccountingPeriod.ToString("MM/dd/yyyy") <br />
+    <strong>Particular:</strong> @Model.Particular <br />
+    <strong>Total Amount:</strong> @Model.JevAmount.ToString("N2")
+</div>
+<div class="d-flex gap-2 mb-3">
+    <a asp-action="AddEntry"
+       asp-route-jevId="@Model.Id"
+       class="btn btn-success">
+        ➕ Add Journal Entry
+    </a>
+
+    <a asp-action="PrintJev"
+       asp-route-id="@Model.Id"
+       target="_blank"
+       class="btn btn-secondary">
+        🖨 Print JEV
+    </a>
+</div>
+
+
+<table class="table table-bordered">
+    <thead>
+        <tr>
+            <th>Account</th>
+            <th>Subsidiary</th>
+            <th>Debit</th>
+            <th>Credit</th>
+        </tr>
+    </thead>
+    <tbody>
+        @if (Model.Entries != null && Model.Entries.Any())
+        {
+            @* foreach (var e in Model.Entries)
+            {
+                <tr>
+                    <td>@e.Account.AccountCode - @e.Account.AccountName</td>
+                    <td>@(e.Subsidiary != null ? e.Subsidiary.SubsidiaryName : "-")</td>
+                    <td>@e.Debit.ToString("N2")</td>
+                    <td>@e.Credit.ToString("N2")</td>
+                </tr>
+            } *@
+            @foreach (var e in Model.Entries)
+            {
+                <tr>
+                    <td>@e.Account.AccountCode - @e.Account.AccountName</td>
+                    <td>@(e.Subsidiary != null ? e.Subsidiary.SubsidiaryName : "-")</td>
+                    <td>@e.Debit.ToString("N2")</td>
+                    <td>@e.Credit.ToString("N2")</td>
+
+                    <td>
+                        <!-- ✅ EDIT -->
+                        <a asp-action="EditEntry"
+                           asp-route-id="@e.Id"
+                           class="btn btn-warning btn-sm">
+                            Edit
+                        </a>
+
+                        <!-- ✅ DELETE -->
+                        <form asp-action="DeleteEntry"
+                              method="post"
+                              style="display:inline;">
+
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="id" value="@e.Id" />
+                            <input type="hidden" name="jevId" value="@Model.Id" />
+
+                            <button type="submit"
+                                    class="btn btn-danger btn-sm"
+                                    onclick="return confirm('Delete this entry?')">
+                                Delete
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+            }
+
+
+        }
+        else
+        {
+            <tr>
+                <td colspan="4" class="text-center text-muted">
+                    No journal entries yet.
+                </td>
+            </tr>
+        }
+    </tbody>
+
+    <tfoot>
+        <tr>
+            <th colspan="2" class="text-end">TOTAL</th>
+            <th>@((Model.Entries?.Sum(x => x.Debit) ?? 0).ToString("N2"))</th>
+            <th>@((Model.Entries?.Sum(x => x.Credit) ?? 0).ToString("N2"))</th>
+
+        </tr>
+    </tfoot>
+
+</table>
+
+
+<a asp-action="Index" class="btn btn-secondary">⬅ Back</a>

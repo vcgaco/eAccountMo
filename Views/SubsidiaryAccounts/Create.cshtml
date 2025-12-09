@@ -1,0 +1,32 @@
+﻿@model SubsidiaryAccount
+
+<h3>Create Subsidiary Account</h3>
+
+<form asp-action="Create" method="post">
+    @Html.AntiForgeryToken()
+
+    <div class="mb-3">
+        <label>Parent Account</label>
+        <select asp-for="AccountId" class="form-control" required>
+            <option value="">-- Select Account --</option>
+            @foreach (var acc in ViewBag.Accounts)
+            {
+                <option value="@acc.Id">
+                    @acc.AccountCode - @acc.AccountName
+                </option>
+            }
+        </select>
+    </div>
+
+    <div class="mb-3">
+        <label>Subsidiary Code</label>
+        <input asp-for="SubsidiaryCode" class="form-control" required />
+    </div>
+
+    <div class="mb-3">
+        <label>Subsidiary Name</label>
+        <input asp-for="SubsidiaryName" class="form-control" required />
+    </div>
+
+    <button type="submit" class="btn btn-success">Save Subsidiary</button>
+</form>

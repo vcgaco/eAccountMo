@@ -1,0 +1,66 @@
+﻿@model IEnumerable<Jev>
+
+@{
+    ViewData["Title"] = "Index";
+}
+
+<p>
+    <a asp-controller="Jevs" asp-action="Create" asp-route-transId="@ViewData["TransId"]" class="btn btn-primary">
+        Create New JEV
+    </a>
+</p>
+<table class="table">
+    <thead>
+        <tr>
+            <th>
+                @Html.DisplayNameFor(model => model.JevNo)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.JevAmount)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.Particular)
+            </th>
+
+            <th>
+                @Html.DisplayNameFor(model => model.AccountingPeriod)
+            </th>
+
+
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var item in Model)
+        {
+            <tr>
+                <td>
+                    @Html.DisplayFor(modelItem => item.JevNo)
+                </td>
+                <td>
+                    @Html.DisplayFor(modelItem => item.JevAmount)
+                </td>
+                <td>
+                    @Html.DisplayFor(modelItem => item.Particular)
+                </td>
+
+                <td>
+                    @item.AccountingPeriod.ToString("MM/dd/yyyy")
+                </td>
+
+
+                <td>
+                    <a asp-action="JournalEntries"
+                       asp-controller="Jevs"
+                       asp-route-id="@item.Id"
+                       class="btn btn-sm btn-primary">
+                        Journal Entries
+                    </a>
+                    <a asp-action="Edit" asp-route-id="@item.Id">Edit</a> |
+                    <a asp-action="Details" asp-route-id="@item.Id">Details</a> |
+                    <a asp-action="Delete" asp-route-id="@item.Id">Delete</a>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>

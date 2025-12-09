@@ -1,0 +1,120 @@
+﻿@model eAccount.Models.ViewModel.CashFlowViewModel
+
+<h3>Statement of Cash Flows</h3>
+
+<form method="get" class="mb-4">
+    <div class="row g-2 align-items-end">
+
+        <div class="col-md-3">
+            <label>Fund</label>
+            <select id="fundId" name="fundId" class="form-select">
+                <option value="">-- Select Fund --</option>
+                @foreach (var f in ViewBag.Funds)
+                {
+                    <option value="@f.Value"
+                            selected="@(f.Value == (ViewBag.SelectedFund?.ToString() ?? "") ? "selected" : null)">
+                        @f.Text
+                    </option>
+                }
+            </select>
+        </div>
+
+        <div class="col-md-3">
+            <label>Special Account</label>
+            <select id="specialAccountId" name="specialAccountId" class="form-select">
+                <option value="">-- All --</option>
+                @foreach (var s in ViewBag.SpecialAccounts)
+                {
+                    <option value="@s.Value"
+                            selected="@(s.Value == (ViewBag.SelectedSpecial?.ToString() ?? "") ? "selected" : null)">
+                        @s.Text
+                    </option>
+                }
+            </select>
+        </div>
+
+        <div class="col-md-3">
+            <label>Month</label>
+            <input type="month" name="period" class="form-control" value="@ViewBag.Period" />
+        </div>
+
+        <div class="col-md-3">
+            <button type="submit" class="btn btn-primary w-100">Generate</button>
+        </div>
+
+    </div>
+</form>
+
+@if (Model == null)
+{
+    <div class="alert alert-info">Select filter to generate Cash Flow.</div>
+}
+else
+{
+    <table class="table table-bordered">
+
+        <thead class="table-dark"><tr><th colspan="3">OPERATING ACTIVITIES</th></tr></thead>
+        @foreach (var i in Model.OperatingActivities)
+        {
+            <tr>
+                <td>@i.AccountCode</td>
+                <td>@i.AccountName</td>
+                <td class="text-end">@i.Amount.ToString("N2")</td>
+            </tr>
+        }
+        <tr class="fw-bold"><td colspan="2" class="text-end">NET OPERATING</td><td class="text-end">@Model.NetOperating.ToString("N2")</td></tr>
+
+        <thead class="table-dark"><tr><th colspan="3">INVESTING ACTIVITIES</th></tr></thead>
+        @foreach (var i in Model.InvestingActivities)
+        {
+            <tr>
+                <td>@i.AccountCode</td>
+                <td>@i.AccountName</td>
+                <td class="text-end">@i.Amount.ToString("N2")</td>
+            </tr>
+        }
+        <tr class="fw-bold"><td colspan="2" class="text-end">NET INVESTING</td><td class="text-end">@Model.NetInvesting.ToString("N2")</td></tr>
+
+        <thead class="table-dark"><tr><th colspan="3">FINANCING ACTIVITIES</th></tr></thead>
+        @foreach (var i in Model.FinancingActivities)
+        {
+            <tr>
+                <td>@i.AccountCode</td>
+                <td>@i.AccountName</td>
+                <td class="text-end">@i.Amount.ToString("N2")</td>
+            </tr>
+        }
+        <tr class="fw-bold"><td colspan="2" class="text-end">NET FINANCING</td><td class="text-end">@Model.NetFinancing.ToString("N2")</td></tr>
+
+        <tr class="table-success fw-bold">
+            <td colspan="2" class="text-end">NET INCREASE IN CASH</td>
+            <td class="text-end">@Model.NetIncreaseInCash.ToString("N2")</td>
+        </tr>
+
+    </table>
+}
+
+@section Scripts {
+    <script>
+        document.getElementById("fundId").addEventListener("change", function () {
+
+            const fundId = this.value;
+            const special = document.getElementById("specialAccountId");
+
+            special.innerHTML = '<option value="">-- All --</option>';
+
+            if (!fundId) return;
+
+            fetch('/CashFlow/GetSpecialAccountsByFund?fundId=' + fundId)
+                .then(res => res.json())
+                .then(data => {
+                    data.forEach(x => {
+                        let opt = document.createElement("option");
+                        opt.value = x.id;
+                        opt.text = x.accountName;
+                        special.appendChild(opt);
+                    });
+                });
+        });
+    </script>
+}

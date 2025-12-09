@@ -1,0 +1,119 @@
+﻿@model List<eAccount.Models.ViewModel.TrialBalanceViewModel>
+
+@{
+    ViewData["Title"] = "Trial Balance";
+}
+
+
+<h2>Trial Balance</h2>
+
+
+<form method="get" class="mb-3">
+    <div class="row g-2 align-items-end">
+        <div class="col-auto">
+            <label for="fundId" class="form-label">Fund</label>
+            <select id="fundId" name="fundId" class="form-select">
+                <option value="">-- Select Fund --</option>
+                @foreach (var f in ViewBag.Funds)
+                {
+                    <option value="@f.Value"
+                            selected="@(f.Value == (ViewBag.SelectedFund?.ToString() ?? "") ? "selected" : null)">
+                        @f.Text
+                    </option>
+                }
+            </select>
+        </div>
+
+        <div class="col-auto">
+            <label for="specialAccountId" class="form-label">Special Account</label>
+            <select id="specialAccountId" name="specialAccountId" class="form-select">
+                <option value="">-- All --</option>
+                @foreach (var sa in ViewBag.SpecialAccounts)
+                {
+                    @* <option value="@sa.Value" @(sa.Value == ViewBag.SelectedSpecial?.ToString() ? "selected" : "")>@sa.Text</option> *@
+                    <option value="@sa.Value"
+                            selected="@(sa.Value == (ViewBag.SelectedSpecial?.ToString() ?? "") ? "selected" : null)">
+                        @sa.Text
+                    </option>
+                }
+            </select>
+        </div>
+
+        <div class="col-auto">
+            <label for="period" class="form-label">As of Month</label>
+            <input type="month" id="period" name="period" class="form-control"
+                   value="@ViewBag.Period" />
+        </div>
+
+        <div class="col-auto">
+            <button type="submit" class="btn btn-primary">Filter</button>
+        </div>
+    </div>
+</form>
+@if (!Model.Any())
+{
+    <tr>
+        <td colspan="4" class="text-center text-muted">
+            Please select Fund, Special Account, and Period then click Filter.
+        </td>
+    </tr>
+}
+<table class="table table-bordered">
+    <thead>
+        <tr>
+            <th>Account Code</th>
+            <th>Account Name</th>
+            <th class="text-end">Debit</th>
+            <th class="text-end">Credit</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var item in Model)
+        {
+            <tr>
+                <td>@item.AccountCode</td>
+                <td>@item.AccountName</td>
+                @* <td class="text-end">@((item.Debit != 0) ? item.Debit.ToString("N2") : "")</td>
+                <td class="text-end">@((item.Credit != 0) ? item.Credit.ToString("N2") : "")</td> *@
+                <td class="text-end">@item.DebitDisplay</td>
+                <td class="text-end">@item.CreditDisplay</td>
+
+
+            </tr>
+        }
+    </tbody>
+    <tfoot>
+        <tr>
+            <th colspan="2" class="text-end">TOTAL</th>
+            <th class="text-end">@Model.Sum(x => x.Debit).ToString("N2")</th>
+            <th class="text-end">@Model.Sum(x => x.Credit).ToString("N2")</th>
+        </tr>
+    </tfoot>
+</table>
+@section Scripts {
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const fundSelect = document.getElementById("fundId");
+            const specialSelect = document.getElementById("specialAccountId");
+
+            fundSelect.addEventListener("change", function () {
+                const fundId = this.value;
+                specialSelect.innerHTML = '<option value="">-- All --</option>'; // reset
+
+                if (!fundId) return;
+
+                fetch('@Url.Action("GetSpecialAccountsByFund", "TrialBalance")?fundId=' + fundId)
+                    .then(res => res.json())
+                    .then(data => {
+                        data.forEach(sa => {
+                            const opt = document.createElement("option");
+                            opt.value = sa.id;
+                            opt.text = sa.accountName;
+                            specialSelect.appendChild(opt);
+                        });
+                    })
+                    .catch(err => console.error("Failed to load special accounts:", err));
+            });
+        });
+    </script>
+}
