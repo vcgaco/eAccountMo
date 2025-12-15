@@ -11,9 +11,12 @@ namespace eAccount.Models
         public int AccountId { get; set; }
         public string SubsidiaryName { get; set; }
         public string SubsidiaryCode { get; set; }
+        public bool HasChildSubsidiary { get; set; }
         [ValidateNever]
         public virtual ChartofAccount Account { get; set; }
         [ValidateNever]
         public virtual ICollection<JevEntry> JevEntries { get; set; }
+        [ValidateNever]
+        public virtual ICollection<FixedAsset> FixedAssets { get; set; }
     }
 }

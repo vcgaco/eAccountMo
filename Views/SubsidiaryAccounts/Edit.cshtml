@@ -4,41 +4,79 @@
     ViewData["Title"] = "Edit";
 }
 
-<h1>Edit</h1>
+<h1>Edit Subsidiary</h1>
 
-<h4>SubsidiaryAccount</h4>
 <hr />
 <div class="row">
-    <div class="col-md-4">
-        <form asp-action="Edit">
+    <div class="col-md-5">
+        <form asp-action="Edit" method="post">
             <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
             <input type="hidden" asp-for="Id" />
-            <div class="form-group">
-                <label asp-for="AccountId" class="control-label"></label>
-                <select asp-for="AccountId" class="form-control" asp-items="ViewBag.AccountId"></select>
+
+            <!-- ✅ Parent Account with Search -->
+            <div class="mb-3">
+                <label asp-for="AccountId" class="form-label"></label>
+
+                <select asp-for="AccountId"
+                        class="form-control select2"
+                        disabled
+                        id="AccountId"
+                        asp-items="ViewBag.Accounts"
+                        required>
+                    <option value="">-- Select Account --</option>
+                </select>
+
                 <span asp-validation-for="AccountId" class="text-danger"></span>
             </div>
-            <div class="form-group">
-                <label asp-for="SubsidiaryName" class="control-label"></label>
+
+            <!-- ✅ Subsidiary Name -->
+            <div class="mb-3">
+                <label asp-for="SubsidiaryName" class="form-label"></label>
                 <input asp-for="SubsidiaryName" class="form-control" />
                 <span asp-validation-for="SubsidiaryName" class="text-danger"></span>
             </div>
-            <div class="form-group">
-                <label asp-for="SubsidiaryCode" class="control-label"></label>
-                <input asp-for="SubsidiaryCode" class="form-control" />
+
+            <!-- ✅ Subsidiary Code -->
+            <div class="mb-3">
+                <label asp-for="SubsidiaryCode" class="form-label"></label>
+                <input asp-for="SubsidiaryCode" class="form-control" readonly />
                 <span asp-validation-for="SubsidiaryCode" class="text-danger"></span>
             </div>
-            <div class="form-group">
-                <input type="submit" value="Save" class="btn btn-primary" />
+            <div class="form-group form-check mt-2">
+                <label class="form-check-label">
+                    <input class="form-check-input" asp-for="HasChildSubsidiary" />
+                    Enable Child Subsidiary (Fixed Assets / Items)
+                </label>
             </div>
+            <!-- ✅ Actions -->
+            <div class="mb-3">
+                <input type="submit" value="Save Changes" class="btn btn-primary" />
+                <a asp-action="Index" class="btn btn-secondary">Back to List</a>
+            </div>
+
         </form>
     </div>
 </div>
 
-<div>
-    <a asp-action="Index">Back to List</a>
-</div>
-
+<!-- ✅ VALIDATION -->
 @section Scripts {
-    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+
+    <!-- ✅ SELECT2 -->
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
+    <script>
+        $(document).ready(function () {
+            $("#AccountId").select2({
+                width: '100%',
+                placeholder: "-- Select Account --",
+                allowClear: true
+            });
+        });
+    </script>
 }

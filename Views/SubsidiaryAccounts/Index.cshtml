@@ -21,27 +21,46 @@
             <th>
                 @Html.DisplayNameFor(model => model.Account)
             </th>
+            <th>
+                Assets
+            </th>
             <th></th>
         </tr>
     </thead>
     <tbody>
-@foreach (var item in Model) {
-        <tr>
-            <td>
-                @Html.DisplayFor(modelItem => item.SubsidiaryName)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.SubsidiaryCode)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.Account.Id)
-            </td>
-            <td>
-                <a asp-action="Edit" asp-route-id="@item.Id">Edit</a> |
-                <a asp-action="Details" asp-route-id="@item.Id">Details</a> |
-                <a asp-action="Delete" asp-route-id="@item.Id">Delete</a>
-            </td>
-        </tr>
-}
+        @foreach (var item in Model)
+        {
+            <tr>
+                <td>
+                    @Html.DisplayFor(modelItem => item.SubsidiaryName)
+                </td>
+                <td>
+                    @Html.DisplayFor(modelItem => item.SubsidiaryCode)
+                </td>
+                <td>
+                    @Html.DisplayFor(modelItem => item.Account.Id)
+                </td>
+                <td>
+                    @if (item.HasChildSubsidiary)
+                    {
+                        <a asp-controller="FixedAssets"
+                           asp-action="Index"
+                           asp-route-subsidiaryId="@item.Id"
+                           class="btn btn-sm btn-success">
+                            Manage Assets
+                        </a>
+                    }
+                    else
+                    {
+                        <span class="text-muted">N/A</span>
+                    }
+                </td>
+                <td>
+                    <a asp-action="Edit" asp-route-id="@item.Id">Edit</a> |
+                    <a asp-action="Details" asp-route-id="@item.Id">Details</a> |
+                    <a asp-action="Delete" asp-route-id="@item.Id">Delete</a>
+                </td>
+            </tr>
+        }
     </tbody>
 </table>

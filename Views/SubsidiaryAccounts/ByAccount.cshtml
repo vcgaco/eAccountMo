@@ -28,7 +28,9 @@
         <tr>
             <th>Code</th>
             <th>Name</th>
+            <th>Asset</th>
             <th>Actions</th>
+
         </tr>
     </thead>
 
@@ -41,9 +43,25 @@
                     <td>@sub.SubsidiaryCode</td>
                     <td>@sub.SubsidiaryName</td>
                     <td>
+                        @if (sub.HasChildSubsidiary)
+                        {
+                            <a asp-controller="FixedAssets"
+                               asp-action="Index"
+                               asp-route-subsidiaryId="@sub.Id"
+                               class="btn btn-sm btn-success">
+                                Manage Assets
+                            </a>
+                        }
+                        else
+                        {
+                            <span class="text-muted">N/A</span>
+                        }
+                    </td>
+                    <td>
                         <a asp-action="Edit" asp-route-id="@sub.Id">Edit</a> |
                         <a asp-action="Delete" asp-route-id="@sub.Id">Delete</a>
                     </td>
+
                 </tr>
             }
         }

@@ -20,13 +20,28 @@ namespace eAccount.Controllers
         }
 
         // GET: ChartofAccounts
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> Index(string search)
         {
-            var accounts = await _context.ChartofAccounts
-         .Include(x => x.Subsidiaries)
-         .ToListAsync();
+            //   var accounts = await _context.ChartofAccounts
+            //.Include(x => x.Subsidiaries)
+            //.ToListAsync();
 
-            return View(accounts);
+            //   return View(accounts);
+            var accounts = _context.ChartofAccounts.AsQueryable();
+
+            // ✅ SEARCH FILTER
+            if (!string.IsNullOrEmpty(search))
+            {
+                accounts = accounts.Where(a =>
+                    a.AccountCode.Contains(search) ||
+                    a.AccountName.Contains(search));
+            }
+
+            ViewBag.Search = search;
+
+            return View(await accounts
+                .OrderBy(a => a.AccountCode)
+                .ToListAsync());
         }
 
         // GET: ChartofAccounts/Details/5
@@ -157,5 +172,7 @@ namespace eAccount.Controllers
         {
             return _context.ChartofAccounts.Any(e => e.Id == id);
         }
+
+
     }
 }

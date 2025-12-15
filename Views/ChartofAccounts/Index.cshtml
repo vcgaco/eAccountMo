@@ -8,6 +8,27 @@
     <h2>@ViewData["Title"]</h2>
     <a asp-action="Create" class="btn btn-primary">Create New Account</a>
 </div>
+<form method="get" asp-action="Index" class="mb-3">
+    <div class="row">
+        <div class="col-md-4">
+            <input type="text"
+                   name="search"
+                   value="@ViewBag.Search"
+                   class="form-control"
+                   placeholder="Search by Account Code or Name..." />
+        </div>
+        <div class="col-md-2">
+            <button type="submit" class="btn btn-primary">
+                🔍 Search
+            </button>
+        </div>
+        <div class="col-md-2">
+            <a asp-action="Index" class="btn btn-secondary">
+                ⟳ Reset
+            </a>
+        </div>
+    </div>
+</form>
 
 <table class="table table-bordered">
     <thead>

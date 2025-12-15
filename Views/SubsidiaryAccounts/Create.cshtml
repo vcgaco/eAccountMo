@@ -7,7 +7,7 @@
 
     <div class="mb-3">
         <label>Parent Account</label>
-        <select asp-for="AccountId" class="form-control" required>
+        <select asp-for="AccountId" class="form-control" id="AccountId" required>
             <option value="">-- Select Account --</option>
             @foreach (var acc in ViewBag.Accounts)
             {
@@ -27,6 +27,24 @@
         <label>Subsidiary Name</label>
         <input asp-for="SubsidiaryName" class="form-control" required />
     </div>
+    <div class="form-group form-check mt-2">
+        <label class="form-check-label">
+            <input class="form-check-input" asp-for="HasChildSubsidiary" />
+            Enable Child Subsidiary (Fixed Assets / Items)
+        </label>
+    </div>
 
     <button type="submit" class="btn btn-success">Save Subsidiary</button>
 </form>
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<script>
+    $(document).ready(function () {
+        $("#AccountId").select2({
+            width: '100%',
+            placeholder: "-- Select Account --",
+            allowClear: true
+        });
+    });
+</script>

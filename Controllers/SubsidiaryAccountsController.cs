@@ -91,8 +91,18 @@ namespace eAccount.Controllers
         // GET: SubsidiaryAccounts/Edit/5
         public async Task<IActionResult> Edit(int? id)
         {
-            var sub = await _context.SubsidiaryAccounts.FindAsync(id);
-            return View(sub);
+            var subsidiary = await _context.SubsidiaryAccounts.FindAsync(id);
+            if (subsidiary == null)
+                return NotFound();
+
+            ViewBag.Accounts = new SelectList(
+                _context.ChartofAccounts.OrderBy(x => x.AccountCode),
+                "Id",
+                "AccountName",
+                subsidiary.AccountId   // ✅ THIS AUTO-SELECTS
+            );
+
+            return View(subsidiary);
         }
 
         // POST: SubsidiaryAccounts/Edit/5
@@ -100,12 +110,35 @@ namespace eAccount.Controllers
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(SubsidiaryAccount model)
+        public async Task<IActionResult> Edit(int id, SubsidiaryAccount model)
         {
-            _context.Update(model);
+            if (id != model.Id)
+                return NotFound();
+
+            if (!ModelState.IsValid)
+                return View(model);
+
+            var existing = await _context.SubsidiaryAccounts
+                .FirstOrDefaultAsync(x => x.Id == id);
+
+            if (existing == null)
+                return NotFound();
+
+            // ✅ Update ONLY editable fields
+            existing.SubsidiaryName = model.SubsidiaryName;
+            existing.HasChildSubsidiary = model.HasChildSubsidiary;
+
+            // ❌ DO NOT TOUCH THESE
+            // existing.AccountId
+            // existing.SubsidiaryCode
+            // existing.JevEntries
+            // existing.FixedAssets
+
             await _context.SaveChangesAsync();
+
             return RedirectToAction("Index", "ChartofAccounts");
         }
+
 
         // GET: SubsidiaryAccounts/Delete/5
         public async Task<IActionResult> Delete(int? id)
