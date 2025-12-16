@@ -1,0 +1,23 @@
+﻿@model IEnumerable<eAccount.Models.FixedAsset>
+
+<h2>Fixed Assets</h2>
+
+<table class="table">
+    <thead>
+        <tr>
+            <th>Asset Name</th>
+            <th>Serial</th>
+            <th>Amount</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var item in Model)
+        {
+            <tr>
+                <td>@item.ChildName</td>
+                <td>@item.SerialNumber</td>
+                <td>@item.Amount.ToString()</td>
+            </tr>
+        }
+    </tbody>
+</table>
