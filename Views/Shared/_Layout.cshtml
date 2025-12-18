@@ -50,11 +50,12 @@
         </a>
 
         <div class="collapse ps-4" id="accountingMenu" data-bs-parent=".sidebar">
-            <a asp-controller="Jevs" asp-action="Index" asp-route-transId="1"><i class="fa fa-calculator" aria-hidden="true"></i> Collection</a>
-            <a asp-controller="Jevs" asp-action="Index" asp-route-transId="2"><i class="fa fa-university" aria-hidden="true"></i> Check Disbursement</a>
-            <a asp-controller="Reports" asp-action="TrialBalance"><i class="fa fa-money" aria-hidden="true"></i> Cash Disbursement</a>
-            <a asp-controller="Reports" asp-action="TrialBalance"><i class="fa fa-credit-card" aria-hidden="true"></i> Auto Debit</a>
-            <a asp-controller="Reports" asp-action="TrialBalance"><i class="fa fa-adjust" aria-hidden="true"></i> Others</a>
+            <a asp-controller="Jevs" asp-action="Index" asp-route-transId="1"><i class="fa fa-adjust" aria-hidden="true"></i> Collection</a>
+            <a asp-controller="Jevs" asp-action="Index" asp-route-transId="2"><i class="fa fa-adjust" aria-hidden="true"></i> Check Disbursement</a>
+            <a asp-controller="Reports" asp-action="TrialBalance"><i class="fa fa-adjust" aria-hidden="true"></i> Cash Disbursement</a>
+            <a asp-controller="Reports" asp-action="TrialBalance"><i class="fa fa-adjust" aria-hidden="true"></i> Auto Debit</a>
+            <a asp-controller="Jevs" asp-action="Index" asp-route-transId="4"><i class="fa fa-adjust" aria-hidden="true"></i> Others</a>
+            <a asp-controller="FixedAssets" asp-action="Index" asp-route-transId="4"><i class="fa fa-adjust" aria-hidden="true"></i> Post Automatic Depreciation Entry</a>
         </div>
 
         <a class="dropdown-toggle"

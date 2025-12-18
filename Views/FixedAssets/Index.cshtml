@@ -1,22 +1,72 @@
 ﻿@model IEnumerable<eAccount.Models.FixedAsset>
 
-<h2>Fixed Assets</h2>
+@{
+    ViewData["Title"] = "Fixed Assets";
+}
 
-<table class="table">
+<h2>@ViewData["Title"]</h2>
+
+<!-- Form to Generate Depreciation -->
+
+<form asp-controller="FixedAssetDepreciation"
+      asp-action="Run"
+      method="post"
+      class="mb-3">
+    @Html.AntiForgeryToken()
+
+    <input type="month"
+           name="accountingPeriod"
+           class="form-control d-inline w-auto"
+           required />
+
+    <button type="submit" class="btn btn-danger ms-2">
+        📉 Post Monthly Depreciation
+    </button>
+</form>
+
+<!-- Display Success / Error -->
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success">@TempData["Success"]</div>
+}
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger">@TempData["Error"]</div>
+}
+
+<!-- Fixed Assets Table -->
+<table class="table table-bordered table-striped">
     <thead>
         <tr>
+            <th>Asset Code</th>
             <th>Asset Name</th>
-            <th>Serial</th>
+            <th>Serial Number</th>
             <th>Amount</th>
+            <th>Accumulated Depreciation</th>
+            <th>Net Book Value</th>
+            <th>Depreciation Effectivity</th>
         </tr>
     </thead>
     <tbody>
-        @foreach (var item in Model)
+        @if (Model != null && Model.Any())
+        {
+            foreach (var asset in Model)
+            {
+                <tr>
+                    <td>@asset.ChildCode</td>
+                    <td>@asset.ChildName</td>
+                    <td>@asset.SerialNumber</td>
+                    <td>@string.Format("{0:N2}", asset.Amount ?? 0m)</td>
+                    <td>@string.Format("{0:N2}", asset.AccumulatedDepreciation)</td>
+                    <td>@string.Format("{0:N2}", asset.NetBookValue)</td>
+                    <td>@asset.DepreciationEffectivity?.ToString("yyyy-MM-dd")</td>
+                </tr>
+            }
+        }
+        else
         {
             <tr>
-                <td>@item.ChildName</td>
-                <td>@item.SerialNumber</td>
-                <td>@item.Amount.ToString()</td>
+                <td colspan="7" class="text-center text-muted">No fixed assets found.</td>
             </tr>
         }
     </tbody>

@@ -1,6 +1,7 @@
 ﻿using eAccount.Data;
 using eAccount.Models;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using System.Diagnostics;
 
 namespace eAccount.Controllers
@@ -15,10 +16,16 @@ namespace eAccount.Controllers
         {
             _context = context;
         }
-        public IActionResult Index()
+        public async Task<IActionResult> Index()
         {
-            return View();
+            // Load fixed assets with subsidiary accounts
+            var assets = await _context.FixedAsset
+                .Include(f => f.SubsidiaryAccount)
+                .ToListAsync();
+
+            return View(assets);
         }
+
         public IActionResult Create(int subsidiaryId)
         {
             Debug.WriteLine($"🔥 SubsidiaryId RECEIVED: {subsidiaryId}");

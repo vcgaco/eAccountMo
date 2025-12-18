@@ -28,7 +28,8 @@ namespace eAccount.Models
         public decimal? ScrapValue { get; set; }
         public decimal? AnnualDepreciation { get; set; }
         public decimal? MonthlyDepreciation { get; set; }
-
+        public decimal AccumulatedDepreciation { get; set; } = 0; // new
+        public decimal NetBookValue => (Amount ?? 0) - AccumulatedDepreciation; // computed
         [ValidateNever]
         public virtual SubsidiaryAccount SubsidiaryAccount { get; set; }
         [ValidateNever]
