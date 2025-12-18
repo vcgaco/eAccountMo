@@ -23,6 +23,7 @@ namespace eAccount.Data
         public DbSet<AuditTrail> AuditTrails { get; set; }
         public DbSet<FinancialReportClassification> FinancialReportClassifications { get; set; }
         public DbSet<FixedAsset> FixedAsset { get; set; }
+        public DbSet<FixedAssetEntry> FixedAssetEntries { get; set; }
 
     }
 

@@ -332,68 +332,56 @@ namespace eAccount.Controllers
         public async Task<IActionResult> AddEntry(JevEntry model)
         {
             Debug.WriteLine("🔥 ADD ENTRY POST HIT 🔥");
-            Debug.WriteLine($"JevId={model.JevId}, AccountId={model.AccountId}, SubsidiaryId={model.SubsidiaryId}");
+            Debug.WriteLine($"JevId={model.JevId}, AccountId={model.AccountId}, SubsidiaryId={model.SubsidiaryId}, FixedAssetId={model.FixedAssetId}");
 
+            // 🔹 Load account
             var account = await _context.ChartofAccounts
                 .FirstOrDefaultAsync(x => x.Id == model.AccountId);
 
-            // ✅ Enforce subsidiary if required
+            // 🔹 Validate subsidiary requirement
             if (account?.HasSubsidiary == true && model.SubsidiaryId == null)
-            {
                 ModelState.AddModelError("", "This account requires a subsidiary.");
-            }
 
-            // ✅ Enforce Debit OR Credit only
+            // 🔹 Validate Debit / Credit rules
             if (model.Debit > 0 && model.Credit > 0)
                 ModelState.AddModelError("", "Only Debit OR Credit is allowed.");
 
             if (model.Debit == 0 && model.Credit == 0)
                 ModelState.AddModelError("", "Debit or Credit is required.");
 
+            // 🔹 Stop if invalid
             if (!ModelState.IsValid)
             {
                 foreach (var err in ModelState.Values.SelectMany(v => v.Errors))
                     Debug.WriteLine("❌ MODEL ERROR: " + err.ErrorMessage);
 
-                ViewBag.Accounts = _context.ChartofAccounts.ToList();
+                ViewBag.Accounts = await _context.ChartofAccounts.ToListAsync();
                 return View(model);
             }
 
-            // ✅ TRANSACTION = both inserts succeed or none
+            // 🔹 Use transaction for safety
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
-                // ✅ 1. Save main JEV Entry
+                // =========================================================
+                // 1️⃣ SAVE JEV ENTRY
+                // =========================================================
                 _context.JevEntries.Add(model);
                 await _context.SaveChangesAsync();
 
-                // 2️. Log audit for JEV entry
-                var newData = new
-                {
-                    model.Id,
-                    model.JevId,
-                    model.AccountId,
-                    model.Debit,
-                    model.Credit,
-                    model.SubsidiaryId
-                };
+                Debug.WriteLine($"✅ JevEntry saved (ID={model.Id})");
 
-                await _audit.LogAsync(
-                    "JevEntries",
-                    model.Id,
-                    "INSERT",
-                    null,       // old values are null for insert
-                    newData,    // new values
-                    User.Identity?.Name
-                );
-                // 3️. If there's a subsidiary, save subsidiary entry
+                // =========================================================
+                // 2️⃣ SAVE SUBSIDIARY ENTRY (IF ANY)
+                // =========================================================
+                SubsidiaryEntry subsidiaryEntry = null;
+
                 if (model.SubsidiaryId != null)
                 {
                     var subsidiary = await _context.SubsidiaryAccounts
                         .FirstOrDefaultAsync(x => x.Id == model.SubsidiaryId);
-                    decimal amount = model.Debit > 0 ? model.Debit : model.Credit;
 
-                    var subsidiaryEntry = new SubsidiaryEntry
+                    subsidiaryEntry = new SubsidiaryEntry
                     {
                         SubsidiaryId = subsidiary.Id,
                         SubsidiaryCode = subsidiary.SubsidiaryCode,
@@ -406,31 +394,37 @@ namespace eAccount.Controllers
                     _context.SubsidiaryEntries.Add(subsidiaryEntry);
                     await _context.SaveChangesAsync();
 
-                    // 4️ Audit the subsidiary entry
-                    var newSubData = new
-                    {
-                        subsidiaryEntry.Id,
-                        subsidiaryEntry.JevId,
-                        subsidiaryEntry.SubsidiaryId,
-                        subsidiaryEntry.SubsidiaryCode,
-                        subsidiaryEntry.SubsidiaryName,
-                        subsidiaryEntry.Debit,
-                        subsidiaryEntry.Credit
-                    };
-
-                    await _audit.LogAsync(
-                        "SubsidiaryEntries",
-                        subsidiaryEntry.Id,
-                        "INSERT",
-                        null,
-                        newSubData,
-                        User.Identity?.Name
-                    );
-
+                    Debug.WriteLine($"✅ SubsidiaryEntry saved (ID={subsidiaryEntry.Id})");
                 }
 
+                // =========================================================
+                // 3️⃣ SAVE FIXED ASSET ENTRY (IF SELECTED)
+                // =========================================================
+                if (model.FixedAssetId != null && subsidiaryEntry != null)
+                {
+                    var asset = await _context.FixedAsset
+                        .FirstOrDefaultAsync(x => x.Id == model.FixedAssetId);
+
+                    var assetEntry = new FixedAssetEntry
+                    {
+                        SubsidiaryEntryId = subsidiaryEntry.Id,
+                        FixedAssetId = asset.Id,
+                        FixedAssetCode = asset.ChildCode,
+                        Debit = model.Debit,
+                        Credit = model.Credit
+                    };
+
+                    _context.FixedAssetEntries.Add(assetEntry);
+                    await _context.SaveChangesAsync();
+
+                    Debug.WriteLine($"✅ FixedAssetEntry saved (ID={assetEntry.Id})");
+                }
+
+                // =========================================================
+                // 4️⃣ COMMIT
+                // =========================================================
                 await transaction.CommitAsync();
-                Debug.WriteLine("✅ TRANSACTION COMMITTED");
+                Debug.WriteLine("🎉 TRANSACTION COMMITTED");
 
                 return RedirectToAction("JournalEntries", new { id = model.JevId });
             }
@@ -438,11 +432,9 @@ namespace eAccount.Controllers
             {
                 await transaction.RollbackAsync();
                 Debug.WriteLine("🔥 TRANSACTION FAILED: " + ex.Message);
-                return BadRequest("DB ERROR: " + ex.Message);
+                return BadRequest("Database error: " + ex.Message);
             }
         }
-
-
 
         // get subsidiaries
         [HttpGet]
@@ -471,26 +463,72 @@ namespace eAccount.Controllers
         [HttpGet]
         public async Task<IActionResult> EditEntry(int id)
         {
+            // 1️⃣ Load JEV entry
             var entry = await _context.JevEntries
-                .Include(x => x.Account)
-                .Include(x => x.Subsidiary)
                 .FirstOrDefaultAsync(x => x.Id == id);
 
             if (entry == null)
                 return NotFound();
 
-            ViewBag.Accounts = await _context.ChartofAccounts.ToListAsync();
-            ViewBag.Subsidiaries = await _context.SubsidiaryAccounts
-                .Where(x => x.AccountId == entry.AccountId)
-                .ToListAsync();
+            var vm = new EditJevEntryVM
+            {
+                Id = entry.Id,
+                JevId = entry.JevId,
+                AccountId = entry.AccountId,
+                SubsidiaryId = entry.SubsidiaryId,
+                Debit = entry.Debit,
+                Credit = entry.Credit
+            };
 
-            return View(entry);
+            // 2️⃣ Load Accounts
+            ViewBag.Accounts = await _context.ChartofAccounts.ToListAsync();
+
+            // 3️⃣ Load Subsidiaries if applicable
+            if (entry.SubsidiaryId != null)
+            {
+                // For dropdown
+                ViewBag.Subsidiaries = await _context.SubsidiaryAccounts
+                    .Where(x => x.AccountId == entry.AccountId)
+                    .ToListAsync();
+
+                // 4️⃣ Load SubsidiaryEntry
+                var subsEntry = await _context.SubsidiaryEntries
+                    .FirstOrDefaultAsync(x =>
+                        x.JevId == entry.JevId &&
+                        x.SubsidiaryId == entry.SubsidiaryId);
+
+                if (subsEntry != null)
+                {
+                    // 5️⃣ Load FixedAssetEntry
+                    var faEntry = await _context.FixedAssetEntries
+                        .FirstOrDefaultAsync(x =>
+                            x.SubsidiaryEntryId == subsEntry.Id);
+
+                    if (faEntry != null)
+                    {
+                        vm.FixedAssetId = faEntry.FixedAssetId;
+
+                        // 6️⃣ Load Fixed Assets dropdown
+                        ViewBag.FixedAssets = await _context.FixedAsset
+                            .Where(x => x.SubsidiaryAccountId == entry.SubsidiaryId)
+                            .ToListAsync();
+                    }
+                }
+            }
+
+            return View(vm);
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> EditEntry(JevEntry model)
+        public async Task<IActionResult> EditEntry(EditJevEntryVM model)
         {
+            if (!ModelState.IsValid)
+            {
+                ViewBag.Accounts = await _context.ChartofAccounts.ToListAsync();
+                return View(model);
+            }
+
             var existingEntry = await _context.JevEntries
                 .Include(x => x.Account)
                 .FirstOrDefaultAsync(x => x.Id == model.Id);
@@ -505,75 +543,126 @@ namespace eAccount.Controllers
             if ((model.Debit <= 0 && model.Credit <= 0) || (model.Debit > 0 && model.Credit > 0))
             {
                 ModelState.AddModelError("", "Only Debit OR Credit is allowed.");
-            }
-
-            // ✅ If new account REQUIRES subsidiary
-            if (newAccount?.HasSubsidiary == true && model.SubsidiaryId == null)
-            {
-                ModelState.AddModelError("", "This account requires a subsidiary.");
-            }
-
-            if (!ModelState.IsValid)
-            {
-                ViewBag.Accounts = _context.ChartofAccounts.ToList();
+                ViewBag.Accounts = await _context.ChartofAccounts.ToListAsync();
                 return View(model);
             }
 
-            // ✅ UPDATE MAIN JEV ENTRY
-            existingEntry.AccountId = model.AccountId;
-            existingEntry.SubsidiaryId = model.SubsidiaryId;
-            existingEntry.Debit = model.Debit;
-            existingEntry.Credit = model.Credit;
-
-            // ✅ HANDLE SUBSIDIARY ENTRY TABLE
-            var existingSubsEntry = await _context.SubsidiaryEntries
-                .FirstOrDefaultAsync(x => x.JevId == model.JevId);
-
-            if (newAccount.HasSubsidiary)
+            // ✅ Subsidiary required check
+            if (newAccount?.HasSubsidiary == true && model.SubsidiaryId == null)
             {
-                // ✅ UPSERT (Insert or Update)
-                if (existingSubsEntry == null)
-                {
-                    var sub = await _context.SubsidiaryAccounts
-                        .FirstOrDefaultAsync(x => x.Id == model.SubsidiaryId);
+                ModelState.AddModelError("", "This account requires a subsidiary.");
+                ViewBag.Accounts = await _context.ChartofAccounts.ToListAsync();
+                return View(model);
+            }
 
-                    _context.SubsidiaryEntries.Add(new SubsidiaryEntry
+            // ✅ Start transaction
+            using var transaction = await _context.Database.BeginTransactionAsync();
+            try
+            {
+                // 1️⃣ Update main JEV Entry
+                existingEntry.AccountId = model.AccountId;
+                existingEntry.SubsidiaryId = model.SubsidiaryId;
+                existingEntry.Debit = model.Debit;
+                existingEntry.Credit = model.Credit;
+                _context.JevEntries.Update(existingEntry);
+
+                // 2️⃣ Handle SubsidiaryEntry
+                var existingSubsEntry = await _context.SubsidiaryEntries
+                    .FirstOrDefaultAsync(x => x.JevId == model.JevId && x.SubsidiaryId == existingEntry.SubsidiaryId);
+
+                if (newAccount.HasSubsidiary && model.SubsidiaryId.HasValue)
+                {
+                    var sub = await _context.SubsidiaryAccounts.FindAsync(model.SubsidiaryId.Value);
+
+                    if (existingSubsEntry == null)
                     {
-                        JevId = model.JevId,
-                        SubsidiaryId = sub.Id,
-                        SubsidiaryCode = sub.SubsidiaryCode,
-                        SubsidiaryName = sub.SubsidiaryName,
-                        Debit = model.Debit,
-                        Credit = model.Credit
-                    });
+                        existingSubsEntry = new SubsidiaryEntry
+                        {
+                            JevId = model.JevId,
+                            SubsidiaryId = sub.Id,
+                            SubsidiaryCode = sub.SubsidiaryCode,
+                            SubsidiaryName = sub.SubsidiaryName,
+                            Debit = model.Debit,
+                            Credit = model.Credit
+                        };
+                        _context.SubsidiaryEntries.Add(existingSubsEntry);
+                    }
+                    else
+                    {
+                        existingSubsEntry.Debit = model.Debit;
+                        existingSubsEntry.Credit = model.Credit;
+                        existingSubsEntry.SubsidiaryId = sub.Id;
+                        existingSubsEntry.SubsidiaryCode = sub.SubsidiaryCode;
+                        existingSubsEntry.SubsidiaryName = sub.SubsidiaryName;
+                        _context.SubsidiaryEntries.Update(existingSubsEntry);
+                    }
+
+                    // 3️⃣ Handle FixedAssetEntry
+                    if (model.FixedAssetId.HasValue)
+                    {
+                        var existingFAEntry = await _context.FixedAssetEntries
+                            .FirstOrDefaultAsync(fa => fa.SubsidiaryEntryId == existingSubsEntry.Id);
+
+                        var fa = await _context.FixedAsset.FindAsync(model.FixedAssetId.Value);
+
+                        if (existingFAEntry == null)
+                        {
+                            _context.FixedAssetEntries.Add(new FixedAssetEntry
+                            {
+                                SubsidiaryEntryId = existingSubsEntry.Id,
+                                FixedAssetId = fa.Id,
+                                FixedAssetCode = fa.ChildCode,
+                                Debit = model.Debit,
+                                Credit = model.Credit
+                            });
+                        }
+                        else
+                        {
+                            existingFAEntry.FixedAssetId = fa.Id;
+                            existingFAEntry.FixedAssetCode = fa.ChildCode;
+                            existingFAEntry.Debit = model.Debit;
+                            existingFAEntry.Credit = model.Credit;
+                            _context.FixedAssetEntries.Update(existingFAEntry);
+                        }
+                    }
+                    else
+                    {
+                        // Remove existing FixedAssetEntry if FixedAssetId cleared
+                        var existingFAEntry = await _context.FixedAssetEntries
+                            .FirstOrDefaultAsync(fa => fa.SubsidiaryEntryId == existingSubsEntry.Id);
+                        if (existingFAEntry != null)
+                            _context.FixedAssetEntries.Remove(existingFAEntry);
+                    }
                 }
                 else
                 {
-                    var sub = await _context.SubsidiaryAccounts
-                        .FirstOrDefaultAsync(x => x.Id == model.SubsidiaryId);
+                    // ✅ Delete orphan SubsidiaryEntry and connected FixedAssetEntry
+                    if (existingSubsEntry != null)
+                    {
+                        var faEntry = await _context.FixedAssetEntries
+                            .FirstOrDefaultAsync(fa => fa.SubsidiaryEntryId == existingSubsEntry.Id);
+                        if (faEntry != null) _context.FixedAssetEntries.Remove(faEntry);
 
-                    existingSubsEntry.SubsidiaryId = sub.Id;
-                    existingSubsEntry.SubsidiaryCode = sub.SubsidiaryCode;
-                    existingSubsEntry.SubsidiaryName = sub.SubsidiaryName;
-                    existingEntry.Debit = model.Debit;
-                    existingSubsEntry.Credit = model.Credit;
+                        _context.SubsidiaryEntries.Remove(existingSubsEntry);
+                    }
+                    existingEntry.SubsidiaryId = null;
                 }
+
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+
+                return RedirectToAction("JournalEntries", new { id = model.JevId });
             }
-            else
+            catch (Exception ex)
             {
-                // ✅ IMPORTANT: DELETE orphan subsidiary
-                if (existingSubsEntry != null)
-                {
-                    _context.SubsidiaryEntries.Remove(existingSubsEntry);
-                }
-
-                existingEntry.SubsidiaryId = null;
+                await transaction.RollbackAsync();
+                ModelState.AddModelError("", "Error updating entry: " + ex.Message);
+                ViewBag.Accounts = await _context.ChartofAccounts.ToListAsync();
+                return View(model);
             }
-
-            await _context.SaveChangesAsync();
-
-            return RedirectToAction("JournalEntries", new { id = model.JevId });
         }
+
+
 
         [HttpGet]
         public async Task<JsonResult> GetSubsidiaries(int accountId)
@@ -657,5 +746,20 @@ namespace eAccount.Controllers
             return View(jev); // ✅ Create PrintJev.cshtml
         }
 
+        [HttpGet]
+        public async Task<IActionResult> GetFixedAssetsBySubsidiary(int subsidiaryId)
+        {
+            var assets = await _context.FixedAsset
+                .Where(x => x.SubsidiaryAccountId == subsidiaryId)
+                .Select(x => new
+                {
+                    x.Id,
+                    x.ChildCode,
+                    x.ChildName
+                })
+                .ToListAsync();
+
+            return Json(assets);
+        }
     }
 }

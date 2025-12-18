@@ -30,6 +30,17 @@
             Subsidiary is required for this account.
         </div>
     </div>
+    <div class="mb-3 d-none" id="fixedAssetContainer">
+        <label>Fixed Asset</label>
+        <select asp-for="FixedAssetId"
+                class="form-control select2"
+                id="FixedAssetId">
+            <option value="">-- Select Fixed Asset --</option>
+        </select>
+    </div>
+
+
+
 
     <div class="mb-3">
         <label>Debit</label>
@@ -112,5 +123,41 @@
         credit.on('input', enableIfValid);
 
         enableIfValid();
+
+            const faContainer = $("#fixedAssetContainer");
+    const faSelect = $("#FixedAssetId");
+
+    faSelect.select2({
+        width: '100%',
+        placeholder: 'Select Fixed Asset'
+    });
+
+    subSelect.on('change', function () {
+        const subsidiaryId = $(this).val();
+
+        faSelect.empty().append('<option value="">-- Select Fixed Asset --</option>');
+        faContainer.addClass('d-none');
+
+        if (!subsidiaryId) return;
+
+        $.getJSON('@Url.Action("GetFixedAssetsBySubsidiary", "Jevs")',
+            { subsidiaryId: subsidiaryId },
+            function (data) {
+
+                if (data.length > 0) {
+                    data.forEach(fa => {
+                        faSelect.append(
+                            new Option(
+                                fa.childCode + " - " + fa.childName,
+                                fa.id
+                            )
+                        );
+                    });
+
+                    faContainer.removeClass('d-none');
+                    faSelect.trigger('change');
+                }
+            });
+    });
     });
 </script>

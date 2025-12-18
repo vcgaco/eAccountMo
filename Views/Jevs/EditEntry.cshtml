@@ -1,4 +1,4 @@
-﻿@model JevEntry
+﻿@model eAccount.Models.ViewModel.EditJevEntryVM
 
 <form asp-action="EditEntry" method="post">
     @Html.AntiForgeryToken()
@@ -6,6 +6,7 @@
     <input type="hidden" asp-for="Id" />
     <input type="hidden" asp-for="JevId" />
 
+    <!-- ACCOUNT -->
     <div class="mb-3">
         <label>Account</label>
         <select asp-for="AccountId" class="form-control select2" id="AccountId" required>
@@ -19,25 +20,58 @@
         </select>
     </div>
 
+    <!-- SUBSIDIARY -->
+    <div class="mb-3" id="subsidiaryContainer"
+         style="@(Model.SubsidiaryId != null ? "" : "display:none;")">
 
-    <!-- ✅ SUBSIDIARY -->
-    <div class="mb-3" id="subsidiaryContainer" style="display:none;">
         <label>Subsidiary</label>
         <select asp-for="SubsidiaryId" class="form-control select2" id="SubsidiaryId">
             <option value="">-- Search Subsidiary --</option>
-        </select>
 
-        <div id="subsidiaryError" class="text-danger mt-1 d-none">
-            Subsidiary is required for this account.
-        </div>
+            @if (ViewBag.Subsidiaries != null)
+            {
+                foreach (var s in ViewBag.Subsidiaries)
+                {
+                    <option value="@s.Id" selected="@(s.Id == Model.SubsidiaryId)">
+                        @s.SubsidiaryCode - @s.SubsidiaryName
+                    </option>
+                }
+            }
+        </select>
     </div>
 
 
+    <!-- FIXED ASSET -->
+    @if (ViewBag.FixedAssets != null)
+    {
+        <div class="mb-3" id="fixedAssetContainer">
+            <label>Fixed Asset</label>
+            <select asp-for="FixedAssetId" class="form-control select2" id="FixedAssetId">
+                <option value="">-- Select Fixed Asset --</option>
+
+                @foreach (var fa in ViewBag.FixedAssets)
+                {
+                    <option value="@fa.Id" selected="@(fa.Id == Model.FixedAssetId)">
+                        @fa.ChildCode - @fa.ChildName
+                    </option>
+                }
+            </select>
+        </div>
+    }
+
+
+
+
+
+
+
+    <!-- DEBIT -->
     <div class="mb-3">
         <label>Debit</label>
         <input asp-for="Debit" class="form-control" type="number" step="0.01" />
     </div>
 
+    <!-- CREDIT -->
     <div class="mb-3">
         <label>Credit</label>
         <input asp-for="Credit" class="form-control" type="number" step="0.01" />
@@ -46,11 +80,11 @@
     <button type="submit" class="btn btn-primary" id="saveBtn">Update Entry</button>
 </form>
 
-
 <!-- Select2 + dynamic JS -->
 <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
 <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
 
 <script>
     $(document).ready(function () {
@@ -67,7 +101,15 @@
         subSelect.select2({ width: '100%', placeholder: 'Search Subsidiary...' });
 
         saveBtn.prop('disabled', true);
-        subContainer.hide();
+           // 🔥 AUTO INIT ON PAGE LOAD
+    if ($("#SubsidiaryId").val()) {
+        $("#subsidiaryContainer").show();
+    }
+
+    if ($("#FixedAssetId").val()) {
+        $("#fixedAssetContainer").show();
+    }
+
 
         function enableIfValid() {
             const d = parseFloat(debit.val()) || 0;
@@ -115,5 +157,41 @@
         credit.on('input', enableIfValid);
 
         enableIfValid();
+
+            const faContainer = $("#fixedAssetContainer");
+    const faSelect = $("#FixedAssetId");
+
+    faSelect.select2({
+        width: '100%',
+        placeholder: 'Select Fixed Asset'
+    });
+
+    subSelect.on('change', function () {
+        const subsidiaryId = $(this).val();
+
+        faSelect.empty().append('<option value="">-- Select Fixed Asset --</option>');
+        faContainer.addClass('d-none');
+
+        if (!subsidiaryId) return;
+
+        $.getJSON('@Url.Action("GetFixedAssetsBySubsidiary", "Jevs")',
+            { subsidiaryId: subsidiaryId },
+            function (data) {
+
+                if (data.length > 0) {
+                    data.forEach(fa => {
+                        faSelect.append(
+                            new Option(
+                                fa.childCode + " - " + fa.childName,
+                                fa.id
+                            )
+                        );
+                    });
+
+                    faContainer.removeClass('d-none');
+                    faSelect.trigger('change');
+                }
+            });
+    });
     });
 </script>
