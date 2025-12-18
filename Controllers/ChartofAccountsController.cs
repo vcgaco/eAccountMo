@@ -7,7 +7,7 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using eAccount.Data;
 using eAccount.Models;
-
+using System.Diagnostics;
 namespace eAccount.Controllers
 {
     public class ChartofAccountsController : Controller
@@ -87,53 +87,72 @@ namespace eAccount.Controllers
         // GET: ChartofAccounts/Edit/5
         public async Task<IActionResult> Edit(int? id)
         {
-            if (id == null)
-            {
-                return NotFound();
-            }
+            if (id == null) return NotFound();
 
-            var chartofAccount = await _context.ChartofAccounts.FindAsync(id);
-            if (chartofAccount == null)
-            {
-                return NotFound();
-            }
+            var chartofAccount = await _context.ChartofAccounts
+                .Include(a => a.DepreciationExpenseAccount)
+                .Include(a => a.AccumulatedDepreciationAccount)
+                .FirstOrDefaultAsync(a => a.Id == id);
+
+            if (chartofAccount == null) return NotFound();
+
+            await PopulateDropdowns(chartofAccount);
+
             return View(chartofAccount);
         }
+
+
+
 
         // POST: ChartofAccounts/Edit/5
         // To protect from overposting attacks, enable the specific properties you want to bind to.
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("Id,AccountCode,AccountName,HasSubsidiary,Debit")] ChartofAccount chartofAccount)
+        public async Task<IActionResult> Edit(int id, [Bind("Id,AccountCode,AccountName,HasSubsidiary,Debit,AccountType,DepreciationExpenseAccountId,AccumulatedDepreciationAccountId")] ChartofAccount chartofAccount)
         {
-            if (id != chartofAccount.Id)
-            {
-                return NotFound();
-            }
+            if (id != chartofAccount.Id) return NotFound();
 
-            if (ModelState.IsValid)
+            try
             {
-                try
+                if (!ModelState.IsValid)
                 {
-                    _context.Update(chartofAccount);
-                    await _context.SaveChangesAsync();
+                    await PopulateDropdowns(chartofAccount);
+                    return View(chartofAccount);
                 }
-                catch (DbUpdateConcurrencyException)
-                {
-                    if (!ChartofAccountExists(chartofAccount.Id))
-                    {
-                        return NotFound();
-                    }
-                    else
-                    {
-                        throw;
-                    }
-                }
+
+                // Attach entity and mark modified
+                _context.Attach(chartofAccount);
+                _context.Entry(chartofAccount).State = EntityState.Modified;
+
+                await _context.SaveChangesAsync();
                 return RedirectToAction(nameof(Index));
             }
-            return View(chartofAccount);
+            catch (Exception ex)
+            {
+                Console.WriteLine("---------- POST Edit Exception ----------");
+                Console.WriteLine("Message: " + ex.Message);
+                Console.WriteLine("StackTrace: " + ex.StackTrace);
+                if (ex.InnerException != null)
+                    Console.WriteLine("InnerException: " + ex.InnerException.Message);
+
+                // Debug posted values
+                Console.WriteLine("ChartOfAccount Data:");
+                Console.WriteLine($"Id: {chartofAccount.Id}");
+                Console.WriteLine($"AccountCode: {chartofAccount.AccountCode}");
+                Console.WriteLine($"AccountName: {chartofAccount.AccountName}");
+                Console.WriteLine($"AccountType: {chartofAccount.AccountType}");
+                Console.WriteLine($"DepreciationExpenseAccountId: {chartofAccount.DepreciationExpenseAccountId}");
+                Console.WriteLine($"AccumulatedDepreciationAccountId: {chartofAccount.AccumulatedDepreciationAccountId}");
+
+                await PopulateDropdowns(chartofAccount);
+
+                ModelState.AddModelError("", "An error occurred while saving. Check console/debug output.");
+                return View(chartofAccount);
+            }
         }
+
+
 
         // GET: ChartofAccounts/Delete/5
         public async Task<IActionResult> Delete(int? id)
@@ -171,6 +190,32 @@ namespace eAccount.Controllers
         private bool ChartofAccountExists(int id)
         {
             return _context.ChartofAccounts.Any(e => e.Id == id);
+        }
+        private async Task PopulateDropdowns(ChartofAccount chartofAccount)
+        {
+            var depreciationAccounts = await _context.ChartofAccounts
+                .Where(a => a.AccountType == AccountType.Normal)
+                .OrderBy(a => a.AccountCode)
+                .ToListAsync();
+
+            ViewBag.DepreciationAccounts = new SelectList(
+                depreciationAccounts,
+                "Id",
+                "AccountName",
+                chartofAccount.DepreciationExpenseAccountId
+            );
+
+            var accumulatedAccounts = await _context.ChartofAccounts
+                .Where(a => a.AccountType == AccountType.Accu)
+                .OrderBy(a => a.AccountCode)
+                .ToListAsync();
+
+            ViewBag.AccumulatedAccounts = new SelectList(
+                accumulatedAccounts,
+                "Id",
+                "AccountName",
+                chartofAccount.AccumulatedDepreciationAccountId
+            );
         }
 
 

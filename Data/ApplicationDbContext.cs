@@ -24,7 +24,24 @@ namespace eAccount.Data
         public DbSet<FinancialReportClassification> FinancialReportClassifications { get; set; }
         public DbSet<FixedAsset> FixedAsset { get; set; }
         public DbSet<FixedAssetEntry> FixedAssetEntries { get; set; }
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            base.OnModelCreating(modelBuilder);
 
+            // Depreciation Expense: one Normal → many FA
+            modelBuilder.Entity<ChartofAccount>()
+                .HasOne(a => a.DepreciationExpenseAccount)
+                .WithMany(a => a.FAUsingThisAsDepreciation)
+                .HasForeignKey(a => a.DepreciationExpenseAccountId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // Accumulated Depreciation: one Accu → many FA
+            modelBuilder.Entity<ChartofAccount>()
+                .HasOne(a => a.AccumulatedDepreciationAccount)
+                .WithMany(a => a.FAUsingThisAsAccumulated)
+                .HasForeignKey(a => a.AccumulatedDepreciationAccountId)
+                .OnDelete(DeleteBehavior.Restrict);
+        }
     }
 
 }

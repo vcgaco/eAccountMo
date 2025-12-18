@@ -6,7 +6,7 @@
 
 <div class="d-flex justify-content-between align-items-center mb-3">
     <h2>@ViewData["Title"]</h2>
-    <a asp-action="Create" class="btn btn-primary">Create New Account</a>
+    @*  <a asp-action="Create" class="btn btn-primary">Create New Account</a> *@
 </div>
 <form method="get" asp-action="Index" class="mb-3">
     <div class="row">
@@ -35,6 +35,7 @@
         <tr>
             <th>@Html.DisplayNameFor(m => m.First().AccountCode)</th>
             <th>@Html.DisplayNameFor(m => m.First().AccountName)</th>
+            <th>@Html.DisplayNameFor(m => m.First().AccountType)</th>
             <th>@Html.DisplayNameFor(m => m.First().HasSubsidiary)</th>
             <th>Actions</th>
         </tr>
@@ -47,11 +48,13 @@
                 <tr>
                     <td>@item.AccountCode</td>
                     <td>@item.AccountName</td>
+                    <td>@item.AccountType</td>
                     <td>@(item.HasSubsidiary ? "Yes" : "No")</td>
                     <td>
-                        <a asp-action="Edit" asp-route-id="@item.Id">Edit</a> |
-                        <a asp-action="Details" asp-route-id="@item.Id">Details</a> |
-                        <a asp-action="Delete" asp-route-id="@item.Id">Delete</a>
+                        <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-outline-primary ms-1"
+                           title="Add Subsidiary">Edit</a>
+                        @* <a asp-action="Details" asp-route-id="@item.Id">Details</a> |
+                        <a asp-action="Delete" asp-route-id="@item.Id">Delete</a> *@
 
                         @if (item.HasSubsidiary)
                         {
